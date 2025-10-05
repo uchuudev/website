@@ -28,7 +28,7 @@ function App() {
                 </h1>
                 <p class="mt-1">
                   from{" "}
-                  <a href="https://tomo.uchuu.io" class="hover:underline">
+                  <a href="https://tomo.uchuu.dev" class="hover:underline">
                     thomas
                   </a>{" "}
                   & friends
@@ -43,13 +43,18 @@ function App() {
           <div class="flex flex-col gap-8">
             <div>
               <h4 class="text-2xl">
+                Coming Soon
+              </h4>
+            </div>
+            {/* <div>
+              <h4 class="text-2xl">
                 01:{" "}
                 <a href="https://translator.uchuu.io" class="hover:underline">
                   Translator
                 </a>
               </h4>
               <p>Your passport to a universe of languages</p>
-            </div>
+            </div> */}
             {/* <div class="text-right">
             <h4 class="text-2xl">
               02: <a href="https://translator.uchuu.io" class="hover:underline">Translator</a>

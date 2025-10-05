@@ -1,8 +1,11 @@
 import { defineConfig } from "vite";
 import tailwindcss from "@tailwindcss/vite";
 import solid from "vite-plugin-solid";
-import { cloudflare } from "@cloudflare/vite-plugin";
+import vercel from 'vite-plugin-vercel';
 
 export default defineConfig({
-  plugins: [solid(), tailwindcss(), cloudflare()],
+  plugins: [solid(), tailwindcss(), vercel()],
+  server: {
+    port: process.env.PORT as unknown as number,
+  },
 });
