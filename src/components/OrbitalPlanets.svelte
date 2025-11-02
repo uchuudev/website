@@ -1,17 +1,23 @@
 <script lang="ts">
-  import { onMount, onDestroy } from "svelte";
+  import { onDestroy, onMount, type Snippet } from "svelte";
   import * as d3 from "d3";
 
-  export let contentWidth: number;
-  export let contentHeight: number;
+  interface Props {
+    contentWidth?: number;
+    contentHeight?: number;
+    children?: Snippet<[]>;
+  }
 
-  let svgRef: SVGSVGElement;
+  let { contentWidth = 0, contentHeight = 0, children }: Props = $props();
+
+  let svgRef: SVGSVGElement | null = null;
   let animationId: number | null = null;
 
   function createOrbitalSystem() {
-    if (!svgRef || !contentWidth || !contentHeight) return;
+    if (!svgRef || contentWidth <= 0 || contentHeight <= 0) return;
 
     const svg = d3.select(svgRef);
+    svg.selectAll("*").interrupt();
     svg.selectAll("*").remove();
 
     const svgWidth = 800;
@@ -22,9 +28,9 @@
     const minRadius = Math.max(contentWidth, contentHeight) / 2 + 30;
 
     const planets = [
-      { id: "planet1", color: "#facc15", radius: 6, orbitRadius: minRadius,       speed: 1.2, startAngle: 0 },
-      { id: "planet2", color: "#7c3aed", radius: 5, orbitRadius: minRadius + 40,  speed: 0.8, startAngle: Math.PI / 2 },
-      { id: "planet3", color: "#4ade80", radius: 4, orbitRadius: minRadius + 80,  speed: 0.5, startAngle: Math.PI },
+      { id: "planet1", color: "#facc15", radius: 6, orbitRadius: minRadius, speed: 1.2, startAngle: 0 },
+      { id: "planet2", color: "#7c3aed", radius: 5, orbitRadius: minRadius + 40, speed: 0.8, startAngle: Math.PI / 2 },
+      { id: "planet3", color: "#4ade80", radius: 4, orbitRadius: minRadius + 80, speed: 0.5, startAngle: Math.PI },
       { id: "planet4", color: "#38bdf8", radius: 5, orbitRadius: minRadius + 120, speed: 0.3, startAngle: Math.PI * 1.5 }
     ];
 
@@ -40,7 +46,8 @@
 
     let startTime: number | null = null;
     const animate = (timestamp: number) => {
-      if (!startTime) startTime = timestamp;
+      if (!svgRef) return;
+      if (startTime === null) startTime = timestamp;
       const elapsed = (timestamp - startTime) * 0.001;
       planetGroups.attr("transform", d => {
         const angle = d.startAngle + elapsed * d.speed;
@@ -48,27 +55,46 @@
         const y = centerY + Math.sin(angle) * d.orbitRadius;
         return `translate(${x}, ${y})`;
       });
-      animationId = requestAnimationFrame(animate);
+      animationId = window.requestAnimationFrame(animate);
     };
-    animationId = requestAnimationFrame(animate);
+
+    animationId = window.requestAnimationFrame(animate);
   }
 
   function reset() {
-    if (animationId) cancelAnimationFrame(animationId);
-    animationId = null;
+    if (animationId !== null) {
+      window.cancelAnimationFrame(animationId);
+      animationId = null;
+    }
     createOrbitalSystem();
   }
 
-  onMount(() => { createOrbitalSystem(); });
-  onDestroy(() => { if (animationId) cancelAnimationFrame(animationId); });
+  onMount(() => {
+    createOrbitalSystem();
+  });
 
-  $: if (contentWidth > 0 && contentHeight > 0) { reset(); }
+  onDestroy(() => {
+    if (animationId !== null) {
+      window.cancelAnimationFrame(animationId);
+      animationId = null;
+    }
+    if (svgRef) {
+      const svg = d3.select(svgRef);
+      svg.selectAll("*").interrupt();
+      svg.selectAll("*").remove();
+    }
+  });
+
+  $effect(() => {
+    if (contentWidth > 0 && contentHeight > 0) {
+      reset();
+    }
+  });
 </script>
 
 <div class="relative">
-  <svg bind:this={svgRef} width="800" height="600" class="absolute pointer-events-none"
-    style={`left: ${-(800 / 2 - contentWidth / 2)}px; top: ${-(600 / 2 - contentHeight / 2)}px; z-index: 1`} />
+  <svg bind:this={svgRef} width="800" height="600" class="absolute pointer-events-none" style={`left: ${-(800 / 2 - contentWidth / 2)}px; top: ${-(600 / 2 - contentHeight / 2)}px; z-index: 1`} />
   <div class="relative z-10 pointer-events-auto">
-    <slot />
+    {@render children?.()}
   </div>
 </div>

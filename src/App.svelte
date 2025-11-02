@@ -3,11 +3,12 @@
   import OrbitalPlanets from "./components/OrbitalPlanets.svelte";
   import { onMount } from "svelte";
 
-  let contentEl: HTMLDivElement;
-  let contentWidth = 0;
-  let contentHeight = 0;
+  let contentEl: HTMLDivElement | null = null;
+  let contentWidth = $state(0);
+  let contentHeight = $state(0);
 
   onMount(() => {
+    if (!contentEl) return;
     contentHeight = contentEl.clientHeight;
     contentWidth = contentEl.clientWidth;
   });

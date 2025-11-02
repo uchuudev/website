@@ -1,9 +1,15 @@
 <script lang="ts">
-  import { onMount, onDestroy } from "svelte";
+  import { onDestroy, onMount, type Snippet } from "svelte";
   import * as d3 from "d3";
 
-  let svgRef: SVGSVGElement;
-  let dimensions = { width: 0, height: 0 };
+  interface Props {
+    children?: Snippet<[]>;
+  }
+
+  const { children }: Props = $props();
+
+  let svgRef: SVGSVGElement | null = null;
+  let dimensions = $state({ width: 0, height: 0 });
   let cleanupShooting: (() => void) | null = null;
 
   function createStars(svg: d3.Selection<SVGSVGElement, unknown, null, undefined>, width: number, height: number) {
@@ -33,6 +39,8 @@
       });
 
     let shootingStarActive = false;
+    let timeoutId: number | null = null;
+
     const createShootingStar = () => {
       if (shootingStarActive) return;
       shootingStarActive = true;
@@ -43,29 +51,40 @@
 
       const shootingStar = svg.append("line").attr("x1", startX).attr("y1", startY).attr("x2", startX).attr("y2", startY).attr("stroke", "white").attr("stroke-width", 2).attr("opacity", 0.8);
 
-      shootingStar.transition().duration(1500).ease(d3.easeQuadOut).attr("x2", endX).attr("y2", endY).attr("opacity", 0).remove().on("end", () => { shootingStarActive = false; });
+      shootingStar.transition().duration(1500).ease(d3.easeQuadOut).attr("x2", endX).attr("y2", endY).attr("opacity", 0).remove().on("end", () => {
+        shootingStarActive = false;
+      });
     };
 
     const scheduleNext = () => {
-      setTimeout(() => {
+      timeoutId = window.setTimeout(() => {
         if (Math.random() < 0.2) createShootingStar();
         scheduleNext();
       }, 4000 + Math.random() * 4000);
     };
+
     scheduleNext();
-    return () => {};
+
+    return () => {
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+      shootingStarActive = false;
+      svg.selectAll("*").interrupt();
+      svg.selectAll("*").remove();
+    };
   }
 
   function handleResize() {
+    if (!svgRef) return;
     const width = window.innerWidth;
     const height = document.documentElement.scrollHeight;
     dimensions = { width, height };
-    if (svgRef) {
-      const svg = d3.select(svgRef);
-      svg.selectAll("*").remove();
-      cleanupShooting && cleanupShooting();
-      cleanupShooting = createStars(svg, width, height);
-    }
+
+    const svg = d3.select(svgRef);
+    cleanupShooting?.();
+    cleanupShooting = createStars(svg, width, height);
   }
 
   onMount(() => {
@@ -75,11 +94,13 @@
 
   onDestroy(() => {
     window.removeEventListener("resize", handleResize);
-    cleanupShooting && cleanupShooting();
+    cleanupShooting?.();
   });
 </script>
 
 <div class="absolute inset-0 z-1 overflow-x-hidden" style={`height: ${dimensions.height}px`}>
-  <svg bind:this={svgRef} { ...{ width: dimensions.width, height: dimensions.height } } class="absolute inset-0" />
-  <div class="relative z-10 overflow-x-hidden"><slot /></div>
+  <svg bind:this={svgRef} {...{ width: dimensions.width, height: dimensions.height }} class="absolute inset-0" />
+  <div class="relative z-10 overflow-x-hidden">
+    {@render children?.()}
+  </div>
 </div>
