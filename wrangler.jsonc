@@ -1,0 +1,23 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "uchuu-website",
+  "main": "./src/worker.ts",
+  "compatibility_date": "2026-08-07",
+  "workers_dev": false,
+  "preview_urls": true,
+  "routes": [
+    {
+      "pattern": "uchuu.dev/*",
+      "zone_name": "uchuu.dev"
+    },
+    {
+      "pattern": "www.uchuu.dev/*",
+      "zone_name": "uchuu.dev"
+    }
+  ],
+  "assets": {
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": true
+  }
+}
